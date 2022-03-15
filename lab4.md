@@ -410,7 +410,7 @@ func (kv *ShardKV) pullCfg() {
 		kv.mu.Unlock()
 		nextCfg := kv.mck.Query(currentCfgNum + 1)
     
-    // 只能顺序更新
+    		// 只能顺序更新
 		if nextCfg.Num == currentCfgNum+1 {
 			index, term, isLeader := kv.rf.Start(CommitCommand{Configuration, -1, nextCfg})
 		}
@@ -433,7 +433,7 @@ func (kv *ShardKV) isReadyToUpdateCfgL() bool {
 
 func (kv *ShardKV) updateCfgL(newCfg shardctrler.Config) CommandResponse {
 	// 只能顺序更新
-  if newCfg.Num != (kv.cfg.Num + 1) {
+  	if newCfg.Num != (kv.cfg.Num + 1) {
 		return CommandResponse{ErrOutDated, ""}
 	}
 	for shard, gid := range newCfg.Shards {
@@ -443,7 +443,7 @@ func (kv *ShardKV) updateCfgL(newCfg shardctrler.Config) CommandResponse {
 		}
 		if _, ok := kv.shardManager[shard]; !ok && gid == kv.gid {
 			if kv.cfg.Num == 0 {
-        // 对于第一个配置，新Shard的状态是CanServer
+        			// 对于第一个配置，新Shard的状态是CanServer
 				kv.shardManager[shard] = CanServe
 			} else {
 				kv.shardManager[shard] = NeedPull
@@ -455,7 +455,7 @@ func (kv *ShardKV) updateCfgL(newCfg shardctrler.Config) CommandResponse {
 				kv.seqMap[shard] = make(map[int64]int64)
 			}
 			
-     	// 在gcManager删除新增的分片
+     			// 在gcManager删除新增的分片
 			delete(kv.gcManager, shard)
 		}
 	}
@@ -515,7 +515,7 @@ func (kv *ShardKV) requestShardData(shard []int, cfgNum int, servers []string, g
 			kv.mu.Lock()
 			kv.gidLeader[gid] = leaderId // 缓存集群主节点
 			
-      if args.CfgNum != kv.cfg.Num {
+      			if args.CfgNum != kv.cfg.Num {
 				kv.mu.Unlock()
 				return
 			}
@@ -576,7 +576,7 @@ func (kv *ShardKV) RequestShard(args *RequestShardArgs, reply *RequestShardReply
 // 更新shard内容
 func (kv *ShardKV) updateShardDataL(item *RequestShardReply, argsCfgNum int) CommandResponse {
 	// 过期请求处理
-  if argsCfgNum != kv.cfg.Num || item.CfgNum < kv.cfg.Num {
+  	if argsCfgNum != kv.cfg.Num || item.CfgNum < kv.cfg.Num {
 		return CommandResponse{ErrOutDated, ""}
 	}
 	for _, shardId := range item.ShardIds {
