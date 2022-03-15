@@ -78,7 +78,7 @@ Schedule的实现，包含了生成ConcreteTask、更新Task元信息和监控�
 
 ```go
 func (c *Coordinator) Schedule() {
-  // 初始时，mapTasks先放入taskReadyCh中
+  	// 初始时，mapTasks先放入taskReadyCh中
 	for i, metaData := range c.mapTasks {
 		c.taskReadyCh <- ConcreteTask{metaData.TaskType, metaData.FileNames, c.nReduce, i}
 	}
