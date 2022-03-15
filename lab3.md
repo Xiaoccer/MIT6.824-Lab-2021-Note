@@ -34,10 +34,10 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 	ck := new(Clerk)
 	ck.servers = servers
 	// You'll have to add code here.
-  // clientId + seqId 组成了序列号
+  	// clientId + seqId 组成了序列号
 	ck.clientId = nrand()
 	ck.seqId = 0
-  // 记录主节点的服务器编号
+  	// 记录主节点的服务器编号
 	ck.leaderServer = 0 
 	return ck
 }
@@ -84,9 +84,9 @@ type KVServer struct {
 	maxraftstate int // snapshot if log grows this big
 	persister    *raft.Persister
 	// Your definitions here.
-  kvStore     map[string]string            // (key, value)
-  seqMap      map[int64]int64              // (clientId, 最后的seqId)
-  indexMap    map[IndexAndTerm]chan CommandResponse // (commitIndex+term, chan)
+  	kvStore     map[string]string            // (key, value)
+  	seqMap      map[int64]int64              // (clientId, 最后的seqId)
+  	indexMap    map[IndexAndTerm]chan CommandResponse // (commitIndex+term, chan)
 	lastApplied int
 }
 
