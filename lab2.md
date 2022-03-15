@@ -59,11 +59,11 @@ func (rf *Raft) requestVote(peer int, args *RequestVoteArgs, votes *int) {
 		if reply.Term > rf.currentTerm {
 			rf.newTermL(reply.Term)
 		} else if rf.currentTerm == args.Term && reply.VoteGranted {
-      // 只处理当前Term与arg.Term相同的请求，丢弃过期Term的请求。
+      			// 只处理当前Term与arg.Term相同的请求，丢弃过期Term的请求。
 			*votes += 1
 			if *votes > len(rf.peers)/2 && rf.state != Leader {
 				rf.becomeLeaderL()
-        // true：发送HeartBeat
+        			// true：发送HeartBeat
 				rf.sendAppendsL(true)
 			}
 		}
@@ -86,7 +86,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		rf.newTermL(args.Term)
 	}
 	
-  // 判断主节点的log是否为最新
+  	// 判断主节点的log是否为最新
 	LastLogIndex := rf.log.lastindex()
 	LastLogTerm := rf.log.entry(LastLogIndex).Term
 	uptodate := (args.LastLogTerm == LastLogTerm && args.LastLogIndex >= LastLogIndex) ||
@@ -99,7 +99,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	if (rf.votedFor == -1 || rf.votedFor == args.CandidateId) && uptodate {
 		reply.VoteGranted = true
 		rf.votedFor = args.CandidateId
-    rf.persist(false) // false: 不持久化snapshot
+    		rf.persist(false) // false: 不持久化snapshot
 		rf.setElectionTimeL()
 	} else {
 		reply.VoteGranted = false
@@ -128,12 +128,12 @@ func (rf *Raft) sendAppendsL(heartBeat bool) {
 func (rf *Raft) sendAppendL(peer int, heartBeat bool) {
 	next := rf.nextIndex[peer]
   
-  // 若leader安装了snapshot，会出现rf.log.start() > next的情况。
+  	// 若leader安装了snapshot，会出现rf.log.start() > next的情况。
 	if next <= rf.log.start() {
 		next = rf.log.start() + 1
 	}
   
-  // 当next的修改来自节点自身log长度时，是有可能大于rf.log.lastindex()的。
+  	// 当next的修改来自节点自身log长度时，是有可能大于rf.log.lastindex()的。
 	if next > rf.log.lastindex()+1 {
 		Debug(dInfo, "S%d: nextIndex[%v]=%v, startindex=%v, lastindex=%v",
 			rf.me, peer, rf.nextIndex[peer], rf.log.start(), rf.log.lastindex())
@@ -190,7 +190,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 	reply.Term = rf.currentTerm
   
-  // PrevLogIndex与当前log长度不匹配时，更新当前log长度到Xlen
+  	// PrevLogIndex与当前log长度不匹配时，更新当前log长度到Xlen
 	if rf.log.lastindex() < args.PrevLogIndex || args.PrevLogIndex < rf.log.start() {
 		Debug(dLog, "S%d PerLogIndex:%v not match, log startindex:%v lastindex:%v", rf.me, args.PrevLogIndex, rf.log.start(), rf.log.lastindex())
 		reply.Success, reply.Xlen = false, rf.log.lastindex()+1
@@ -213,19 +213,19 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	}
 
 	// 更新本地日志
-  needPersist := false
+  	needPersist := false
 	appendIndex := args.PrevLogIndex + 1
 	for i, logEntry := range args.Entries {
 		if appendIndex > rf.log.lastindex() {
 			// 一次性复制剩下的Entries
 			rf.log.appendmany(args.Entries[i:])
-      needPersist = true
+      			needPersist = true
 			break
 		} else if rf.log.entry(appendIndex).Term != logEntry.Term {
 			// 日志任期不一致时，以主的为准，清除所有过期的Entry
 			rf.log.cutend(appendIndex)
 			rf.log.append(logEntry)
-      needPersist = true
+      			needPersist = true
 		}
 		appendIndex += 1
 	}
@@ -234,7 +234,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.persist(false)
 	}
 	
-  // 通知上层可以apply主节点已经commit的日志。
+  	// 通知上层可以apply主节点已经commit的日志。
 	if args.LeaderCommit > rf.commitIndex {
 		rf.commitIndex = args.LeaderCommit
 		if (rf.log.lastindex()) < rf.commitIndex {
@@ -243,7 +243,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.signalApplierL()
 	}
   
-  reply.Success = true 
+  	reply.Success = true 
 }
 ```
 
@@ -260,7 +260,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 ```go
 func (rf *Raft) processAppendReplyL(peer int, args *AppendEntriesArgs,
 	reply *AppendEntriesReply) {
-  Debug(dInfo, "S%d: processAppendReply from %v %v args: %v", rf.me, peer, reply, args)
+  	Debug(dInfo, "S%d: processAppendReply from %v %v args: %v", rf.me, peer, reply, args)
 	if reply.Term > rf.currentTerm {
 		rf.newTermL(reply.Term)
 	} else if rf.currentTerm == args.Term {
@@ -270,7 +270,7 @@ func (rf *Raft) processAppendReplyL(peer int, args *AppendEntriesArgs,
 
 func (rf *Raft) concreteProcessAppendReplyL(peer int, args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	if reply.Success {
-    Debug(dInfo, "S%d: processAppendReply success: peer %v next %v match %v commitIndex:%v",
+    		Debug(dInfo, "S%d: processAppendReply success: peer %v next %v match %v commitIndex:%v",
 			rf.me, peer, rf.nextIndex[peer], rf.matchIndex[peer], rf.commitIndex)
     
 		newnext := args.PrevLogIndex + len(args.Entries) + 1
@@ -282,12 +282,12 @@ func (rf *Raft) concreteProcessAppendReplyL(peer int, args *AppendEntriesArgs, r
 		if newmatch > rf.matchIndex[peer] {
 			rf.matchIndex[peer] = newmatch
 		}
-    if newmatch > rf.commitIndex {
+    		if newmatch > rf.commitIndex {
 			rf.advanceCommitL()
 		}
 	} else {
     
-    // 收到了重复且过期的请求，无需处理。
+    		// 收到了重复且过期的请求，无需处理。
 		if args.PrevLogIndex+1 != rf.nextIndex[peer] && args.PrevLogIndex != rf.log.start() {
 			Debug(dInfo, "S%d: processAppendReply duplicated: args.PervLogIndex+1=%v rf.nextIndex[%v]=%v",
 				rf.me, args.PrevLogIndex+1, peer, rf.nextIndex[peer])
@@ -295,7 +295,7 @@ func (rf *Raft) concreteProcessAppendReplyL(peer int, args *AppendEntriesArgs, r
 		}
     
 		if reply.Xlen != -1 {
-      // 若Xlen返回有值，通过Xlen更新nextIndex
+     			 // 若Xlen返回有值，通过Xlen更新nextIndex
 			rf.nextIndex[peer] = reply.Xlen
 		} else {
 			// 默认使用XIndex作为nextIndex
@@ -315,15 +315,15 @@ func (rf *Raft) concreteProcessAppendReplyL(peer int, args *AppendEntriesArgs, r
 		}
 
 		if rf.nextIndex[peer] < rf.log.start()+1 {
-      // 需发送snapshot
+      			// 需发送snapshot
 			args := &InstallSnapshotArgs{rf.currentTerm, rf.me, rf.snapshotIndex,
 				rf.snapshotTerm, make([]byte, len(rf.snapshot))}
 			copy(args.Data, rf.snapshot)
 			go rf.sendSnapshot(peer, args， true) // true：发完snapshot后重新发送日志复制请求。
-    } else {
-      // 重新发送日志复制请求。
-      rf.sendAppendL(peer, false)
-    }
+    		} else {
+      			// 重新发送日志复制请求。
+      			rf.sendAppendL(peer, false)
+    		}
 	}
 
 }
@@ -339,7 +339,7 @@ func (rf *Raft) concreteProcessAppendReplyL(peer int, args *AppendEntriesArgs, r
 func (rf *Raft) advanceCommitL() {
 	if rf.state != Leader {
 		Debug(dError, "S%d ErrorCommit: state:%v", rf.me, rf.state)
-    return
+    		return
 	}
 
 	start := rf.commitIndex + 1
@@ -460,11 +460,11 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 		rf.snapshotIndex = index
 		rf.snapshotTerm = rf.log.entry(index).Term
 		Debug(dInfo, "S%d snpatshot index:%v log startindex:%v lastindex:%v", rf.me, index, rf.log.start(), rf.log.lastindex())
-    // 清空过期日志
+    		// 清空过期日志
 		rf.log.cutstart(index - rf.log.start())
 		rf.persist(true)
 		
-    // 主节点同步最新快照给从节点
+    		// 主节点同步最新快照给从节点
 		if rf.state == Leader {
 			args := &InstallSnapshotArgs{rf.currentTerm, rf.me, rf.snapshotIndex,
 				rf.snapshotTerm, make([]byte, len(rf.snapshot))}
@@ -491,7 +491,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 		reply.Term = rf.currentTerm
 		return
 	}
-  Debug(dSnap, "S%d InstallSnapshot args: %v", rf.me, args)
+ 	 Debug(dSnap, "S%d InstallSnapshot args: %v", rf.me, args)
   
 	if args.Term > rf.currentTerm {
 		rf.newTermL(args.Term)
@@ -517,8 +517,8 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int,
 	if lastIncludedIndex > rf.snapshotIndex && lastIncludedIndex > rf.lastApplied {
 		Debug(dSnap, "S%d condinstallsnapshot: index %v term %v", rf.me, lastIncludedIndex, lastIncludedTerm)
 		if lastIncludedIndex >= rf.log.lastindex() || lastIncludedTerm != rf.log.entry(lastIncludedIndex).Term {
-      // 1.当lastIncludedIndex >= rf.log.lastindex()，相当于上图SnapshotIndex3的情况，清空所有日志
-      // 2.节点当前日志任期不匹配，也是直接清空
+      		// 1.当lastIncludedIndex >= rf.log.lastindex()，相当于上图SnapshotIndex3的情况，清空所有日志
+     		// 2.节点当前日志任期不匹配，也是直接清空
 			rf.log = mkLog(make([]Entry, 1), lastIncludedIndex)  // dummy entry
 			rf.log.entry(lastIncludedIndex).Term = lastIncludedTerm
 		} else {
@@ -530,7 +530,7 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int,
 		rf.snapshot = snapshot
 		rf.persist(true)
    	
-    rf.lastApplied = lastIncludedIndex
+    		rf.lastApplied = lastIncludedIndex
 		if lastIncludedIndex > rf.commitIndex {
 			rf.commitIndex = lastIncludedIndex
 		}
